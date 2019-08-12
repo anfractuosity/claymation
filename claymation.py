@@ -19,6 +19,14 @@ HEIGHT = 720
 RECORD = 5
 PLAY = 22
 
+camera = PiCamera()                                                                                                                                                                                            
+camera.resolution = (WIDTH,HEIGHT)         
+
+try:
+    os.makedirs("resources")
+except FileExistsError:
+    ok = 1
+
 sdl2.ext.init()
 RESOURCES = sdl2.ext.Resources(__file__, "resources")
 
@@ -26,14 +34,15 @@ window = sdl2.ext.Window("Claymation", size=(WIDTH, HEIGHT))
 window.show()
 
 renderer = sdl2.ext.Renderer(window)
+renderer.clear(sdl2.ext.Color(0, 0, 0))
+renderer.present()
+
 factory = sdl2.ext.SpriteFactory(renderer=renderer)
 sprite = factory.create_texture_sprite(renderer,size=(WIDTH,HEIGHT))
 spriterenderer = factory.create_sprite_render_system(sprite_type=sdl2.ext.sprite.TEXTURE)
 
 textures = []
    
-camera = PiCamera()
-camera.resolution = (1280,720)
 GPIO.setmode(GPIO.BCM)
 
 buttons = [ 4, 17, 27, PLAY, RECORD ]
@@ -44,11 +53,7 @@ def button_callback(channel):
     global doit
 
     if channel == RECORD:
-        now = datetime.now()
-        fname = "%s.jpg" % now.strftime("%Y-%m-%d_%H-%M-%S")
-        camera.capture(os.path.join("resources",fname),'jpeg')
-        doit.append({"img":fname})
-
+        doit.append({"record":True})
     if channel == PLAY:
         doit.append({"play":True})
 
@@ -62,15 +67,30 @@ while True:
         x = doit.pop()
         if x != None:
 
-            if "img" in x:
-                textures.append( sdl2.render.SDL_CreateTextureFromSurface(renderer.renderer,sdl2.ext.load_image(os.path.join("resources",x["img"]))))
-                sprite.texture = textures[len(textures)-1]
-                spriterenderer.render(sprite)
 
             if "play" in x:
                 for g in textures:
-                    sprite.texture = g
+                    
+                    surf = sdl2.ext.load_image(os.path.join("resources",g))
+                    texture = sdl2.render.SDL_CreateTextureFromSurface(renderer.renderer,surf)
+                    sprite.texture = texture
                     spriterenderer.render(sprite)
-                    time.sleep(0.04)
+                    sdl2.render.SDL_DestroyTexture(texture)
+                    sdl2.SDL_FreeSurface(surf)
 
+
+            if "record" in x:
+
+                now = datetime.now()
+                fname = "%s.jpg" % now.strftime("%Y-%m-%d_%H-%M-%S")
+                camera.capture(os.path.join("resources",fname),'jpeg')
+
+                surf = sdl2.ext.load_image(os.path.join("resources",fname))
+                texture = sdl2.render.SDL_CreateTextureFromSurface(renderer.renderer,surf)
+                textures.append( fname )
+
+                sprite.texture = texture
+                spriterenderer.render(sprite)
+                sdl2.render.SDL_DestroyTexture(texture)
+                sdl2.SDL_FreeSurface(surf)
 
