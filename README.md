@@ -7,7 +7,15 @@ sudo apt-get install python3-sdl2
 pip3 install picamera
 ```
 
-# Case
+## To do
+
+* Preload images into memory, to help with playback when dealing with lots of images
+
+* Alternatively could try to use ffmpeg/.. to encode images to a video for playback
+
+* Switch from busy waiting in 'event handler'
+
+## Case
 
 ![case](/images/case.jpg)
 
